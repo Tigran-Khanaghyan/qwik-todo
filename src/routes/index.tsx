@@ -8,10 +8,14 @@ type ITodo = {
 };
 interface IStore {
   value: string;
+  editedValue: string;
   todos: ITodo[];
 }
 
 export const handleAdd = (store: IStore) => {
+  if (!store.value) {
+    return;
+  }
   const todo = { value: store.value, mode: "Edit" };
   store.todos.push(todo as ITodo);
   store.value = "";
@@ -39,6 +43,7 @@ export default component$(() => {
   const store = useStore<IStore>(
     {
       value: "",
+      editedValue: "",
       todos: [],
     },
     { recursive: true }
@@ -59,29 +64,19 @@ export default component$(() => {
       {store.todos.map((todo, i) => {
         return (
           <>
-            {todo.mode === "Edit" ? (
-              <div>{todo.value}</div>
-            ) : (
-              <div>
-                <input
-                  value={todo.value}
-                  onInput$={(event) =>
-                    (todo.value = (event.target as HTMLInputElement).value)
-                  }
-                  onKeyPress$={$((event: KeyboardEventInit) => {
-                    if (event.key === "Enter") {
-                      handleEdit(todo);
-                    }
-                  })}
-                ></input>
-              </div>
-            )}
-            <button type="submit" onClick$={$(() => handleDelete(store, i))}>
-              Delete
-            </button>
-            <button type="submit" onClick$={$(() => handleEdit(todo))}>
-              {todo.mode}
-            </button>
+            <div
+              contentEditable="true"
+              onInput$={(event: InputEvent) => {
+                store.editedValue += event.data;
+              }}
+              onBlur$={() => {
+                todo.value += store.editedValue;
+                store.editedValue = "";
+              }}
+            >
+              {todo.value}
+            </div>
+            <button onClick$={$(() => handleDelete(store, i))}>Delete</button>
           </>
         );
       })}
